@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/plugins/NumericalVertexEdit" >
+        <!--icon made by Robert Szczepanek . Thanks Robert-->
+        <file>vector-edit-keyboard.png</file>
+    </qresource>
+</RCC>

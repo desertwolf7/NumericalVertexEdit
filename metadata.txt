@@ -1,0 +1,33 @@
+; the next section is mandatory
+[general]
+; start of mandatory metadata
+name=Numerical Vertex Edit
+qgisMinimumVersion=2.0
+description=Allows to edit a vertex in a numeric way by clicking on it.
+version=0.2.1
+author=Cédric Möri
+email=cmoe@geoing.ch
+; end of mandatory metadata
+
+; start of optional metadata
+
+; experimental flag
+experimental=false
+
+changelog=Workaround for Bug #12631 in 2.8
+   Ready for QGIS 2.o
+   Fix API Break 1.8/1.9 on layer crs/srs
+
+; tags are in comma separated value format, spaces are allowed
+tags=digitizing
+
+; these metadata can be empty
+; in a future version of the web application it will
+; be probably possible to create a project on redmine
+; if they are not filled
+homepage=http://sourceforge.net/projects/geoing/
+tracker=https://sourceforge.net/apps/trac/geoing/
+repository=http://geoing.svn.sourceforge.net/viewvc/geoing/
+icon=vector-edit-keyboard.png
+
+
