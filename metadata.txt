@@ -25,9 +25,9 @@ tags=digitizing
 ; in a future version of the web application it will
 ; be probably possible to create a project on redmine
 ; if they are not filled
-homepage=http://sourceforge.net/projects/geoing/
-tracker=https://sourceforge.net/apps/trac/geoing/
-repository=http://geoing.svn.sourceforge.net/viewvc/geoing/
+; homepage=http://sourceforge.net/projects/geoing/
+tracker=https://github.com/desertwolf7/NumericalVertexEdit/issues
+repository=https://github.com/desertwolf7/NumericalVertexEdit/
 icon=vector-edit-keyboard.png
 
 
