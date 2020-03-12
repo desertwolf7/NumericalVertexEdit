@@ -34,6 +34,7 @@
 from qgis.PyQt.QtCore import QPoint, QSettings, pyqtSignal
 from qgis.PyQt.QtGui import QCursor, QPixmap, QColor
 from qgis.gui import QgsMapTool, QgsMessageViewer, QgsVertexMarker
+from qgis.core import QgsSnappingUtils, QgsPointLocator
 
 
 # Vertex Finder Tool class
@@ -42,9 +43,10 @@ class VertexFinderTool(QgsMapTool):
     vertexFound = pyqtSignal(list)
 
     def __init__(self, canvas):
-        QgsMapTool.__init__(self,canvas)
-        self.canvas=canvas
-        #our own fancy cursor
+        QgsMapTool.__init__(self, canvas)
+        self.canvas = canvas
+        self.marker = None
+        # Our own fancy cursor
         self.cursor = QCursor(QPixmap(["16 16 3 1",
                                        "      c None",
                                        ".     c #FF0000",
@@ -66,100 +68,98 @@ class VertexFinderTool(QgsMapTool):
                                        "      ++.++     ",
                                        "       +.+      "]))
 
-
-    def canvasPressEvent(self,event):
+    def canvasPressEvent(self, event):
         pass
 
-    def canvasMoveEvent(self,event):
+    def canvasMoveEvent(self, event):
         pass
 
-    def canvasReleaseEvent(self,event):
-        #Get the click
+    def canvasReleaseEvent(self, event):
+        # Get the click
         x = event.pos().x()
         y = event.pos().y()
 
         layer = self.canvas.currentLayer()
 
         if layer is not None:
-            #something to store the result
+            # something to store the result
             snapResult = None
 
-            #the clicked point is our starting point
-            startingPoint = QPoint(x,y)
+            # The clicked point is our starting point
+            startingPoint = QPoint(x, y)
 
-            #we need a snapper, so we use the MapCanvas snapper
-            snapper = QgsMapCanvasSnapper(self.canvas)
+            # We need a snapper, so we use the MapCanvas snapper
+            snapper = self.canvas.snappingUtils()
 
-            #we snap to the current layer (we don't have exclude points and use the tolerances from the qgis properties)
-            (retval,result) = snapper.snapToCurrentLayer (startingPoint,QgsSnapper.SnapToVertex)
+            # We snap to the current layer (we don't have exclude points and use the tolerances
+            # from the qgis properties)
+            result = snapper.snapToCurrentLayer(startingPoint, QgsPointLocator.Vertex)
 
-            #so if we have found a vertex
+            # So if we have found a vertex
             if result != []:
                 snapResult = result[0]
-            else:
-                #fix/workaround for broken snapper (Bug in 2.8 see ticket #12631)
-                try:
-                    utils = self.canvas.snappingUtils()
-                    SegmentLocator = utils.snapToCurrentLayer(startingPoint, 1)
+            # else:
+                # Fix/workaround for broken snapper (Bug in 2.8 see ticket #12631)
+                # try:
+                #    utils = self.canvas.snappingUtils()
+                #    SegmentLocator = utils.snapToCurrentLayer(startingPoint, 1)
 
-                    if SegmentLocator.isValid():
-                        snapResult = QgsSnappingResult()
+                #    if SegmentLocator.isValid():
+                #        snapResult = QgsSnappingResult()
 
-                        vertexCoords = snapResult.snappedVertex  = SegmentLocator.point()#vertexCoord are given in crs of the project
-                        vertexNr = snapResult.snappedVertexNr = SegmentLocator.vertexIndex()
-                        geometry = snapResult.snappedAtGeometry = SegmentLocator.featureId()
-                        layer = snapResult.layer = SegmentLocator.layer()
+                # VertexCoord are given in crs of the project
+                #        vertexCoords = snapResult.snappedVertex  = SegmentLocator.point()
+                #        vertexNr = snapResult.snappedVertexNr = SegmentLocator.vertexIndex()
+                #        geometry = snapResult.snappedAtGeometry = SegmentLocator.featureId()
+                #        layer = snapResult.layer = SegmentLocator.layer()
 
-                except AttributeError:
-                    self.showSettingsWarning()
-                    return
+                # except AttributeError:
+                #    self.showSettingsWarning()
+                #    return
 
             if snapResult is not None:
-                #we like to mark the vertex that is choosen, so we build a vertex marker...
+                # We like to mark the vertex that is choosen, so we build a vertex marker...
                 self.marker = QgsVertexMarker(self.canvas)
 
-                #we have to know about the standard vertex marker, so we may use an other one
+                # We have to know about the standard vertex marker, so we may use an other one
                 settings = QSettings()
                 settingsLabel = "/Qgis/digitizing/marker_style"
                 markerType = settings.value(settingsLabel)
                 if markerType == "Cross":
                     self.marker.setIconType(3)
-                    self.marker.setColor(QColor(255,255,0))
+                    self.marker.setColor(QColor(255, 255, 0))
                 else:
                     self.marker.setIconType(2)
-                    self.marker.setColor(QColor(255,0,0))
+                    self.marker.setColor(QColor(255, 0, 0))
 
                 self.marker.setIconSize(10)
-                self.marker.setPenWidth (2)
+                self.marker.setPenWidth(2)
 
-
-                #mark the vertex
+                # Mark the vertex
                 self.marker.setCenter(snapResult.snappedVertex)
 
-                #tell the world about the vertex and the marker
-                self.vertexFound.emit([snapResult,self.marker])
+                # Tell the world about the vertex and the marker
+                self.vertexFound.emit([snapResult, self.marker])
 
             else:
-                #warn about missing snapping tolerance if appropriate
+                # Warn about missing snapping tolerance if appropriate
                 self.showSettingsWarning()
 
-
-
     def showSettingsWarning(self):
-        #get the setting for displaySnapWarning
+        # Get the setting for displaySnapWarning
         settings = QSettings()
         settingsLabel = "/UI/displaySnapWarning"
         displaySnapWarning = settings.value(settingsLabel)
 
-
-        #only show the warning if the setting is true
+        # Only show the warning if the setting is true
         if displaySnapWarning == 'true' or displaySnapWarning is None:
             m = QgsMessageViewer()
             m.setWindowTitle("Snap tolerance")
             m.setCheckBoxText("Don't show this message again")
             m.setCheckBoxVisible(True)
             m.setCheckBoxQSettingsLabel(settingsLabel)
-            m.setMessageAsHtml( "<p>Could not snap vertex.</p><p>Have you set the tolerance in Settings > Project Properties > General?</p>")
+            m.setMessageAsHtml( "<p>Could not snap vertex.</p><p>Have you set the tolerance in Settings > "
+                                "Project Properties > General?</p>")
             m.showMessage()
 
     def activate(self):

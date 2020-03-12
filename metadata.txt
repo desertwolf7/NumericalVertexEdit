@@ -2,7 +2,7 @@
 [general]
 ; start of mandatory metadata
 name=Numerical Vertex Edit
-qgisMinimumVersion=2.0
+qgisMinimumVersion=3.0
 description=Allows to edit a vertex in a numeric way by clicking on it.
 version=0.2.1
 author=Cédric Möri
