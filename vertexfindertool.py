@@ -93,11 +93,12 @@ class VertexFinderTool(QgsMapTool):
 
             # We snap to the current layer (we don't have exclude points and use the tolerances
             # from the qgis properties)
-            result = snapper.snapToCurrentLayer(startingPoint, QgsPointLocator.Vertex)
+            snapResult = snapper.snapToCurrentLayer(startingPoint, QgsPointLocator.Vertex)
 
             # So if we have found a vertex
-            if result != []:
-                snapResult = result[0]
+            # if result is not None:
+            #    if result.isValid():
+            #        snapResult = result[0]
             # else:
                 # Fix/workaround for broken snapper (Bug in 2.8 see ticket #12631)
                 # try:
@@ -118,28 +119,29 @@ class VertexFinderTool(QgsMapTool):
                 #    return
 
             if snapResult is not None:
-                # We like to mark the vertex that is choosen, so we build a vertex marker...
-                self.marker = QgsVertexMarker(self.canvas)
+                if snapResult.isValid() and snapResult.hasVertex():
+                    # We like to mark the vertex that is choosen, so we build a vertex marker...
+                    self.marker = QgsVertexMarker(self.canvas)
 
-                # We have to know about the standard vertex marker, so we may use an other one
-                settings = QSettings()
-                settingsLabel = "/Qgis/digitizing/marker_style"
-                markerType = settings.value(settingsLabel)
-                if markerType == "Cross":
-                    self.marker.setIconType(3)
-                    self.marker.setColor(QColor(255, 255, 0))
-                else:
-                    self.marker.setIconType(2)
-                    self.marker.setColor(QColor(255, 0, 0))
+                    # We have to know about the standard vertex marker, so we may use an other one
+                    settings = QSettings()
+                    settingsLabel = "/Qgis/digitizing/marker_style"
+                    markerType = settings.value(settingsLabel)
+                    if markerType == "Cross":
+                        self.marker.setIconType(3)
+                        self.marker.setColor(QColor(255, 255, 0))
+                    else:
+                        self.marker.setIconType(2)
+                        self.marker.setColor(QColor(255, 0, 0))
 
-                self.marker.setIconSize(10)
-                self.marker.setPenWidth(2)
+                    self.marker.setIconSize(10)
+                    self.marker.setPenWidth(2)
 
-                # Mark the vertex
-                self.marker.setCenter(snapResult.snappedVertex)
+                    # Mark the vertex
+                    self.marker.setCenter(snapResult.point())
 
-                # Tell the world about the vertex and the marker
-                self.vertexFound.emit([snapResult, self.marker])
+                    # Tell the world about the vertex and the marker
+                    self.vertexFound.emit([snapResult, self.marker])
 
             else:
                 # Warn about missing snapping tolerance if appropriate

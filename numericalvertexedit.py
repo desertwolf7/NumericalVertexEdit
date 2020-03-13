@@ -88,6 +88,9 @@ class NumericalVertexEdit:
         # Get the Tool
         self.tool = VertexFinderTool(self.canvas)
 
+        # Connect to the VFtool
+        self.tool.vertexFound.connect(self.moveVertex)
+
         # Add toolbar button and menu item
         self.iface.digitizeToolBar().addAction(self.action)
         self.iface.editMenu().addAction(self.action)
@@ -105,9 +108,6 @@ class NumericalVertexEdit:
         # Set VertexFinderTool as current tool
         mc.setMapTool(self.tool)
         self.action.setChecked(True)
-
-        # Connect to the VFtool
-        self.tool.vertexFound.connect(self.moveVertex)
 
     def toggle(self):
         mc = self.canvas
@@ -138,17 +138,24 @@ class NumericalVertexEdit:
 
         # Uncheck the button/menu and get rid off the VFtool signal
         self.action.setChecked(False)
-        self.tool.vertexFound.disconnect(self.moveVertex)
+  #      try:
+  #          if self.tool is not None:
+  #              self.tool.vertexFound.disconnect(self.moveVertex)
+  #      except Exception:
+  #          pass
 
     def moveVertex(self, result):
         marker = result[1]
         snappingResult = result[0]
 
+        QMessageBox.critical(self.iface.mainWindow(), "Move vertex error", "Move vertex error",
+                             QMessageBox.Ok)
+
         # The vertex that is found by the tool:
-        vertexCoords = snappingResult.snappedVertex  # vertexCoord are given in crs of the project
-        vertexNr = snappingResult.snappedVertexNr
-        geometry = snappingResult.snappedAtGeometry
-        layer = snappingResult.layer
+        vertexCoords = snappingResult.point()  # vertexCoord are given in crs of the project
+        vertexNr = snappingResult.vertexIndex()
+        featureId = snappingResult.featureId()
+        layer = snappingResult.layer()
         try:
             layerSrs = layer.srs()  # find out the srs of the layer
         except AttributeError:      # API version >1.8
@@ -171,7 +178,7 @@ class NumericalVertexEdit:
         projectSrs.createFromProj4(projectSrsEntry[0])
 
         # Set up a coordinate transformation to transform the vertex coord into the srs of his layer
-        transformer = QgsCoordinateTransform(projectSrs, layerSrs)
+        transformer = QgsCoordinateTransform(projectSrs, layerSrs,  QgsProject.instance())
         # transformedPoint = transformer.transform(input.split(",")[0].toDouble()[0],
         #                                          input.split(",")[1].toDouble()[0])
         transformedPoint = transformer.transform(float(input.split(",")[0]), float(input.split(",")[1]))
@@ -185,7 +192,7 @@ class NumericalVertexEdit:
             if self.undoAvailable:
                 layer.beginEditCommand("Moved Vertex")
                 # Now we move the vertex to the given coordinates
-            layer.moveVertex(transformedPoint.x(), transformedPoint.y(), geometry, vertexNr)
+            layer.moveVertex(transformedPoint.x(), transformedPoint.y(), featureId, vertexNr)
             # end of undo/redo stack (if available)
             if self.undoAvailable:
                 layer.endEditCommand()
